@@ -164,16 +164,21 @@ int tinet_write_srl(const char *message) {
 }
 
 int tinet_read_srl(char *to_buffer) {
-    const int bytes_read = srl_Read(&srl_device, to_buffer, sizeof srl_buf);
+    int bytes_read = 0;
+    int total_bytes_read = 0;
+
+    while ((bytes_read = srl_Read(&srl_device, to_buffer + total_bytes_read, 1024)) > 0) {
+        total_bytes_read += bytes_read;
+    }
 
     if (bytes_read < 0) {
         return TINET_SRL_READ_FAIL;
     }
 
-    to_buffer[bytes_read] = '\0';
+    to_buffer[total_bytes_read] = '\0';
 
     usb_HandleEvents();
-    return bytes_read;
+    return total_bytes_read;
 }
 
 TINET_ReturnCode tinet_login() {
