@@ -7,10 +7,11 @@
  *--------------------------------------
 */
 
-#include <tinet.h>
+#include "tinet-lib/tinet.h"
 #include <string.h>
 #include <fileioc.h>
 #include <srldrvce.h>
+#include <time.h>
 
 char *username;
 char *authkey;
@@ -19,6 +20,7 @@ uint8_t NetKeyAppVar;
 srl_device_t srl_device;
 uint8_t srl_buf[512];
 bool has_srl_device = false;
+bool bridge_connected = false;
 
 static usb_error_t handle_usb_event(usb_event_t event, void *event_data, usb_callback_data_t *callback_data __attribute__((unused))) {
     usb_error_t err;
@@ -42,7 +44,7 @@ static usb_error_t handle_usb_event(usb_event_t event, void *event_data, usb_cal
             device = event_data;
         }
 
-        const srl_error_t error = srl_Open(&srl_device, device, srl_buf, sizeof srl_buf, SRL_INTERFACE_ANY, 9600);
+        const srl_error_t error = srl_Open(&srl_device, device, srl_buf, sizeof srl_buf, SRL_INTERFACE_ANY, 115200);
         if(error) {
             printf("Error %d initting serial\n", error);
             return USB_SUCCESS;
@@ -89,7 +91,18 @@ char* tinet_get_username() {
     return username;
 }
 
-int tinet_connect() {
+int tinet_connect(int timeout) {
+    time_t start_time;
+    time_t current_time;
+    time(&start_time);
+
+    do {
+        time(&current_time);
+        if (current_time - start_time > (unsigned long) timeout) {
+            return TINET_TIMEOUT_EXCEEDED;
+        }
+        tinet_write_srl("CONNECT_TCP\0");
+    } while (!bridge_connected);
     return TINET_SUCCESS;
 }
 
@@ -112,7 +125,7 @@ int tinet_write_srl(const char *message) {
     }
 
     usb_HandleEvents();
-    return totalBytesWritten;
+    return TINET_SUCCESS;
 }
 
 int tinet_read_srl(char *to_buffer) {
@@ -123,5 +136,5 @@ int tinet_read_srl(char *to_buffer) {
         return TINET_SRL_READ_FAIL;
     }
 
-    return bytes_read;
+    return TINET_SUCCESS;
 }
