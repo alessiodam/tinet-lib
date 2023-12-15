@@ -15,6 +15,7 @@
 #include <srldrvce.h>
 #include <time.h>
 #include <sys/timers.h>
+#include <ti/info.h>
 
 char *username;
 char *authkey;
@@ -25,6 +26,8 @@ uint8_t srl_buf[512];
 bool has_srl_device = false;
 bool bridge_connected = false;
 char tinet_net_buffer[4096];
+
+const system_info_t *systemInfo;
 
 static usb_error_t handle_usb_event(usb_event_t event, void *event_data, usb_callback_data_t *callback_data __attribute__((unused))) {
     usb_error_t err;
@@ -69,6 +72,13 @@ static usb_error_t handle_usb_event(usb_event_t event, void *event_data, usb_cal
 }
 
 int tinet_init() {
+    const system_info_t *systemInfo = os_GetSystemInfo();
+
+    if (systemInfo->hardwareType2 != 9)
+    {
+        return TINET_UNSUPPORTED_CALC;
+    }
+
     NetKeyAppVar = ti_Open("NETKEY", "r");
     if (NetKeyAppVar == 0) {
         return TINET_NO_KEYFILE;
@@ -163,4 +173,30 @@ int tinet_read_srl(char *to_buffer) {
     to_buffer[bytes_read] = '\0';
 
     return bytes_read;
+}
+
+TINET_ReturnCode tinet_login() {
+    char calcidStr[sizeof(systemInfo->calcid) * 2 + 1];
+    for (unsigned int i = 0; i < sizeof(systemInfo->calcid); i++)
+    {
+        sprintf(calcidStr + i * 2, "%02X", systemInfo->calcid[i]);
+    }
+
+    char login_msg[93];
+    snprintf(login_msg, sizeof(login_msg), "LOGIN:%s:%s:%s", calcidStr, username, authkey);
+
+    const TINET_ReturnCode write_result = tinet_write_srl(login_msg);
+    if (write_result != TINET_SUCCESS) {
+        return TINET_LOGIN_FAILED;
+    }
+
+    do {
+        const int read_bytes = tinet_read_srl(tinet_net_buffer);
+        if (read_bytes > 0) {
+            printf("got data back\n");
+            break;
+        }
+    } while (1);
+
+    return TINET_SUCCESS;
 }
