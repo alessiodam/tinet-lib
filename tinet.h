@@ -30,14 +30,15 @@ extern "C" {
   * @brief Possible return codes for TINET functions.
   */
  typedef enum {
-  TINET_SUCCESS,            /**< Operation succeeded. */
-  TINET_NO_KEYFILE,         /**< No keyfile found. */
-  TINET_INVALID_KEYFILE,    /**< Invalid keyfile format. */
-  TINET_SRL_INIT_FAIL,      /**< Serial initialization failure. */
-  TINET_SRL_WRITE_FAIL,     /**< Serial write failure. */
-  TINET_SRL_READ_FAIL,      /**< Serial read failure. */
-  TINET_NO_BRIDGE,          /**< No bridge connected or not initialized. */
-  TINET_TIMEOUT_EXCEEDED,   /**< Timeout exceeded during execution. */
+  TINET_SUCCESS,           /**< Operation succeeded. */
+  TINET_NO_KEYFILE,        /**< No keyfile found. */
+  TINET_INVALID_KEYFILE,   /**< Invalid keyfile format. */
+  TINET_SRL_INIT_FAIL,     /**< Serial initialization failure. */
+  TINET_SRL_WRITE_FAIL,    /**< Serial write failure. */
+  TINET_SRL_READ_FAIL,     /**< Serial read failure. */
+  TINET_NO_BRIDGE,         /**< No bridge connected or not initialized. */
+  TINET_TIMEOUT_EXCEEDED,  /**< Timeout exceeded during execution. */
+  TINET_TCP_INIT_FAILED,   /**< Could not create a TCP socket on the bridge. */
  } TINET_ReturnCode;
 
  /**
@@ -58,10 +59,10 @@ extern "C" {
   */
  int tinet_connect(int timeout);
 
- /**
-  * @brief Retrieves the serial device used by TINET.
-  * @return The serial device structure.
-  */
+/**
+ * @brief Retrieves the serial device used by TINET.
+ * @return The serial device structure.
+ */
  srl_device_t tinet_get_srl_device();
 
  /**

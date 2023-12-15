@@ -7,11 +7,14 @@
  *--------------------------------------
 */
 
+// TODO: implement login system
+
 #include "tinet-lib/tinet.h"
 #include <string.h>
 #include <fileioc.h>
 #include <srldrvce.h>
 #include <time.h>
+#include <sys/timers.h>
 
 char *username;
 char *authkey;
@@ -21,6 +24,7 @@ srl_device_t srl_device;
 uint8_t srl_buf[512];
 bool has_srl_device = false;
 bool bridge_connected = false;
+char tinet_net_buffer[4096];
 
 static usb_error_t handle_usb_event(usb_event_t event, void *event_data, usb_callback_data_t *callback_data __attribute__((unused))) {
     usb_error_t err;
@@ -44,7 +48,7 @@ static usb_error_t handle_usb_event(usb_event_t event, void *event_data, usb_cal
             device = event_data;
         }
 
-        const srl_error_t error = srl_Open(&srl_device, device, srl_buf, sizeof srl_buf, SRL_INTERFACE_ANY, 115200);
+        const srl_error_t error = srl_Open(&srl_device, device, srl_buf, sizeof srl_buf, SRL_INTERFACE_ANY, 9600);
         if(error) {
             printf("Error %d initting serial\n", error);
             return USB_SUCCESS;
@@ -91,19 +95,39 @@ char* tinet_get_username() {
     return username;
 }
 
-int tinet_connect(int timeout) {
+int tinet_connect(const int timeout) {
     time_t start_time;
     time_t current_time;
     time(&start_time);
 
     do {
         time(&current_time);
-        if (current_time - start_time > (unsigned long) timeout) {
+        if (difftime(current_time, start_time) > (double)timeout) {
             return TINET_TIMEOUT_EXCEEDED;
         }
-        tinet_write_srl("CONNECT_TCP\0");
-    } while (!bridge_connected);
-    return TINET_SUCCESS;
+
+        const TINET_ReturnCode read_result = tinet_read_srl(tinet_net_buffer);
+        if (read_result > 0) {
+            printf("read success\n");
+            printf("%s\n", tinet_net_buffer);
+            if (strcmp(tinet_net_buffer, "BRIDGE_CONNECTED\0") == 0) {
+                printf("Bridge connected\n");
+                bridge_connected = true;
+            }
+
+            msleep(200);
+
+            const TINET_ReturnCode write_response = tinet_write_srl("CONNECT_TCP\0");
+            if (write_response == TINET_SUCCESS) {
+                printf("requested TCP sock open\n");
+                return TINET_SUCCESS;
+            }
+
+            printf("TCP init failed");
+            return TINET_TCP_INIT_FAILED;
+        }
+
+    } while (1);
 }
 
 srl_device_t tinet_get_srl_device() {
@@ -130,11 +154,13 @@ int tinet_write_srl(const char *message) {
 
 int tinet_read_srl(char *to_buffer) {
     usb_HandleEvents();
-    const int bytes_read = srl_Read(&srl_device, to_buffer, strlen(to_buffer) + 1);
+    const int bytes_read = srl_Read(&srl_device, to_buffer, sizeof srl_buf);
 
     if (bytes_read < 0) {
         return TINET_SRL_READ_FAIL;
     }
 
-    return TINET_SUCCESS;
+    to_buffer[bytes_read] = '\0';
+
+    return bytes_read;
 }
