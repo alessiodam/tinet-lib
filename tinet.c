@@ -52,7 +52,7 @@ static usb_error_t handle_usb_event(usb_event_t event, void *event_data, usb_cal
             device = event_data;
         }
 
-        const srl_error_t error = srl_Open(&srl_device, device, srl_buf, sizeof srl_buf, SRL_INTERFACE_ANY, 9600);
+        const srl_error_t error = srl_Open(&srl_device, device, srl_buf, sizeof srl_buf, SRL_INTERFACE_ANY, 115200);
         if(error) {
             printf("Error %d initting serial\n", error);
             return USB_SUCCESS;
@@ -164,7 +164,6 @@ int tinet_write_srl(const char *message) {
 }
 
 int tinet_read_srl(char *to_buffer) {
-    usb_HandleEvents();
     const int bytes_read = srl_Read(&srl_device, to_buffer, sizeof srl_buf);
 
     if (bytes_read < 0) {
@@ -173,6 +172,7 @@ int tinet_read_srl(char *to_buffer) {
 
     to_buffer[bytes_read] = '\0';
 
+    usb_HandleEvents();
     return bytes_read;
 }
 
