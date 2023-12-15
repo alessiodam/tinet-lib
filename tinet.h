@@ -1,8 +1,8 @@
 /*
  *--------------------------------------
- * Program Name: TINET system
+ * Program Name: TINET lib
  * Author: TKB Studios
- * License: Apache License 2.0
+ * License: Mozilla Public License Version 2.0
  * Description: Allows the user to communicate with the TINET servers
  *--------------------------------------
 */
