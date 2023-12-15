@@ -8,6 +8,7 @@
 */
 
 // TODO: implement login system
+// TODO: Fix the serial receive not receiving all the data
 
 #include "tinet-lib/tinet.h"
 #include <string.h>
