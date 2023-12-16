@@ -41,6 +41,7 @@ extern "C" {
   TINET_TCP_INIT_FAILED,   /**< Could not create a TCP socket on the bridge. */
   TINET_UNSUPPORTED_CALC,  /**< Incorrect calc model, only TI-84PCE (Python Edition too) works. */
   TINET_LOGIN_FAILED,      /**< General error code for a failed login. */
+  TINET_NO_CONNECTION,     /**< General error code for no connection, might be bridge, srl or something else */
  } TINET_ReturnCode;
 
  /**
@@ -80,6 +81,12 @@ extern "C" {
   * @return TINET_ReturnCode indicating the read result or the amount of bytes written.
   */
  int tinet_read_srl(char *to_buffer);
+
+ /**
+ * @brief Logs in to the TINET account.
+ * @attention this should only be run after a successful init and connect!
+ */
+ TINET_ReturnCode tinet_login();
 
 #ifdef __cplusplus
 }
