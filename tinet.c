@@ -26,6 +26,7 @@ srl_device_t srl_device;
 uint8_t srl_buf[512];
 bool has_srl_device = false;
 bool bridge_connected = false;
+bool tcp_connected = false;
 char tinet_net_buffer[2048];
 
 const system_info_t *systemInfo;
@@ -98,7 +99,6 @@ int tinet_init() {
         printf("usb init error %u\n", usb_error);
         return TINET_SRL_INIT_FAIL;
     }
-
     return TINET_SUCCESS;
 }
 
@@ -124,18 +124,28 @@ int tinet_connect(const int timeout) {
             if (strcmp(tinet_net_buffer, "BRIDGE_CONNECTED\0") == 0) {
                 printf("Bridge connected\n");
                 bridge_connected = true;
+
+                const TINET_ReturnCode write_response = tinet_write_srl("CONNECT_TCP\0");
+                if (write_response == TINET_SUCCESS) {
+                    printf("requested TCP sock open\n");
+                    do {
+                        time(&current_time);
+                        if ((int)difftime(current_time, start_time) > timeout) {
+                            return TINET_TIMEOUT_EXCEEDED;
+                        }
+                        const int connect_tcp_read_bytes = tinet_read_srl(tinet_net_buffer);
+                        if (connect_tcp_read_bytes > 0) {
+                            if (strcmp(tinet_net_buffer, "TCP_CONNECTED\0") == 0) {
+                                // connected to TCP
+                                tcp_connected = true;
+                                return TINET_SUCCESS;
+                            }
+                        }
+                    } while (true);
+                }
+                printf("TCP init failed\n");
+                return TINET_TCP_INIT_FAILED;
             }
-
-            msleep(200);
-
-            const TINET_ReturnCode write_response = tinet_write_srl("CONNECT_TCP\0");
-            if (write_response == TINET_SUCCESS) {
-                printf("requested TCP sock open\n");
-                return TINET_SUCCESS;
-            }
-
-            printf("TCP init failed\n");
-            return TINET_TCP_INIT_FAILED;
         }
 
     } while (1);
@@ -165,15 +175,26 @@ int tinet_write_srl(const char *message) {
 
 int tinet_read_srl(char *to_buffer) {
     const int bytes_read = srl_Read(&srl_device, to_buffer, 1024);
+    if (bytes_read > 0) {
+        has_srl_device = true;
+        bridge_connected = true;
+    } else if (bytes_read < 0) {
+        has_srl_device = false;
+        bridge_connected = false;
+    }
     to_buffer[bytes_read] = '\0';
     usb_HandleEvents();
     return bytes_read;
 }
 
-TINET_ReturnCode tinet_login() {
-    if (!bridge_connected || !has_srl_device) {
+TINET_ReturnCode tinet_login(const int timeout) {
+    if (!bridge_connected || !has_srl_device || !tcp_connected) {
         return TINET_NO_CONNECTION;
     }
+
+    time_t start_time;
+    time_t current_time;
+    time(&start_time);
 
     char calcidStr[sizeof(systemInfo->calcid) * 2 + 1];
     for (unsigned int i = 0; i < sizeof(systemInfo->calcid); i++)
@@ -190,6 +211,10 @@ TINET_ReturnCode tinet_login() {
     }
 
     do {
+        time(&current_time);
+        if ((int)difftime(current_time, start_time) > timeout) {
+            return TINET_TIMEOUT_EXCEEDED;
+        }
         const int read_bytes = tinet_read_srl(tinet_net_buffer);
         if (read_bytes > 0) {
             printf("got data back\n");

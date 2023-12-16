@@ -16,15 +16,20 @@
 extern "C" {
 #endif
 
- /**
+  /**
   * @brief Indicates whether a serial device is present.
   */
  extern bool has_srl_device;
 
- /**
+  /**
   * @brief Indicates whether a connection to TINET bridge is established.
   */
  extern bool bridge_connected;
+
+ /**
+ * @brief Indicates whether a connection to TINET TCP server is established.
+ */
+ extern bool tcp_connected;
 
  /**
   * @brief Possible return codes for TINET functions.
@@ -84,9 +89,10 @@ extern "C" {
 
  /**
  * @brief Logs in to the TINET account.
+ * @param timeout Timeout (in seconds) for login.
  * @attention this should only be run after a successful init and connect!
  */
- TINET_ReturnCode tinet_login();
+ TINET_ReturnCode tinet_login(const int timeout);
 
 #ifdef __cplusplus
 }
