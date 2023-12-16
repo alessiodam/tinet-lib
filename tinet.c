@@ -7,8 +7,12 @@
  *--------------------------------------
 */
 
-// TODO: implement login system
-// TODO: Fix the serial receive not receiving all the data
+/*
+ *--------------Contributors--------------
+ * TIny_Hacker - key parsing for login
+ * ACagliano (Anthony Cagliano) - help with serial things
+ *--------------------------------------
+*/
 
 #include "tinet-lib/tinet.h"
 #include <string.h>
@@ -17,10 +21,12 @@
 #include <time.h>
 #include <ti/info.h>
 
+// AUTH VARIABLES
 char *username;
 char *authkey;
 uint8_t NetKeyAppVar;
 
+// SERIAL VARIABLES
 srl_device_t srl_device;
 uint8_t srl_buf[512];
 bool has_srl_device = false;
@@ -30,7 +36,7 @@ char tinet_net_buffer[2048];
 
 const system_info_t *systemInfo;
 
-static usb_error_t handle_usb_event(usb_event_t event, void *event_data, usb_callback_data_t *callback_data __attribute__((unused))) {
+static usb_error_t handle_usb_event(const usb_event_t event, void *event_data, usb_callback_data_t *callback_data __attribute__((unused))) {
     usb_error_t err;
 
     if ((err = srl_UsbEventCallback(event, event_data, callback_data)) != USB_SUCCESS)
@@ -172,6 +178,7 @@ int tinet_write_srl(const char *message) {
     return TINET_SUCCESS;
 }
 
+// TODO: not receiving all the data, fix this
 int tinet_read_srl(char *to_buffer) {
     const int bytes_read = srl_Read(&srl_device, to_buffer, 1024);
     if (bytes_read > 0) {
@@ -216,11 +223,14 @@ TINET_ReturnCode tinet_login(const int timeout) {
         }
         const int read_bytes = tinet_read_srl(tinet_net_buffer);
         if (read_bytes > 0) {
-            printf("got data back\n");
-            break;
+            if (strcmp(tinet_net_buffer, "LOGIN_SUCCESS\0") == 0) {
+                return TINET_SUCCESS;
+            }
+            return TINET_LOGIN_FAILED;
         }
     } while (1);
 
+    authkey[0] = '\0'; // sets the auth key to nothing to prevent memory dump attacks
     return TINET_SUCCESS;
 }
 
