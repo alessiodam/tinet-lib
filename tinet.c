@@ -14,7 +14,7 @@
  *--------------------------------------
 */
 
-#include "tinet-lib/tinet.h"
+#include "tinet.h"
 #include <string.h>
 #include <fileioc.h>
 #include <srldrvce.h>
