@@ -167,12 +167,12 @@ int tinet_read_srl(char *to_buffer) {
     int bytes_read = 0;
     int total_bytes_read = 0;
 
-    while ((bytes_read = srl_Read(&srl_device, to_buffer + total_bytes_read, 1024)) > 0) {
+    while ((bytes_read = srl_Read(&srl_device, to_buffer + total_bytes_read, 64)) > 0) {
         total_bytes_read += bytes_read;
     }
 
     if (bytes_read < 0) {
-        return TINET_SRL_READ_FAIL;
+        return -1;
     }
 
     to_buffer[total_bytes_read] = '\0';
