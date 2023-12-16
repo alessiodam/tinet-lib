@@ -36,6 +36,7 @@ extern "C" {
   */
  typedef enum {
   TINET_SUCCESS,           /**< General return code for a successful operation. */
+  TINET_FAIL,              /**< General error code for unknown failures. */
   TINET_NO_KEYFILE,        /**< No keyfile found. */
   TINET_INVALID_KEYFILE,   /**< Invalid keyfile format. */
   TINET_SRL_INIT_FAIL,     /**< Serial initialization failure. */
@@ -47,6 +48,7 @@ extern "C" {
   TINET_UNSUPPORTED_CALC,  /**< Incorrect calc model, only TI-84PCE (Python Edition too) works. */
   TINET_LOGIN_FAILED,      /**< General error code for a failed login. */
   TINET_NO_CONNECTION,     /**< General error code for no connection, might be bridge, srl or something else */
+  TINET_CHAT_SEND_FAIL,    /**< General error code for a failed chat send. */
  } TINET_ReturnCode;
 
  /**
@@ -93,6 +95,8 @@ extern "C" {
  * @attention this should only be run after a successful init and connect!
  */
  TINET_ReturnCode tinet_login(const int timeout);
+
+ TINET_ReturnCode tinet_send_rtc_message(const char *recipient, const char *message);
 
 #ifdef __cplusplus
 }

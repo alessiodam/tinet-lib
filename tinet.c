@@ -15,7 +15,6 @@
 #include <fileioc.h>
 #include <srldrvce.h>
 #include <time.h>
-#include <sys/timers.h>
 #include <ti/info.h>
 
 char *username;
@@ -223,4 +222,25 @@ TINET_ReturnCode tinet_login(const int timeout) {
     } while (1);
 
     return TINET_SUCCESS;
+}
+
+TINET_ReturnCode tinet_send_rtc_message(const char *recipient, const char *message) {
+    // example end buffer: RTC_CHAT:recipient:message
+    char write_message[117] = "RTC_CHAT:";
+    strcat(write_message, recipient);
+    strcat(write_message, ":");
+    strcat(write_message, message);
+    strcat(write_message, "\0");
+
+    const TINET_ReturnCode rtc_chat_sent = tinet_write_srl(write_message);
+    write_message[0] = '\0';
+
+    switch (rtc_chat_sent) {
+        case TINET_SUCCESS:
+            return TINET_SUCCESS;
+        case TINET_SRL_WRITE_FAIL:
+            return TINET_CHAT_SEND_FAIL;
+        default:
+            return TINET_FAIL;
+    }
 }
