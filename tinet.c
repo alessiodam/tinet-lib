@@ -75,7 +75,6 @@ static usb_error_t handle_usb_event(const usb_event_t event, void *event_data, u
 
         const srl_error_t error = srl_Open(&srl_device, device, srl_buf, sizeof srl_buf, SRL_INTERFACE_ANY, 115200);
         if(error) {
-            printf("Error %d initting serial\n", error);
             return USB_SUCCESS;
         }
 
@@ -116,7 +115,6 @@ int tinet_init() {
 
     if(usb_error) {
         usb_Cleanup();
-        printf("usb init error %u\n", usb_error);
         return TINET_SRL_INIT_FAIL;
     }
     return TINET_SUCCESS;
@@ -139,14 +137,11 @@ int tinet_connect(const int timeout) {
 
         const TINET_ReturnCode read_result = tinet_read_srl(tinet_net_buffer);
         if (read_result > 0) {
-            printf("read success\n");
             if (strcmp(tinet_net_buffer, "BRIDGE_CONNECTED\n") == 0) {
-                printf("Bridge connected\n");
                 bridge_connected = true;
 
                 const TINET_ReturnCode write_response = tinet_write_srl("CONNECT_TCP\n");
                 if (write_response == TINET_SUCCESS) {
-                    printf("TCP open request\n");
                     do {
                         time(&current_time);
                         if ((int)difftime(current_time, start_time) > timeout) {
@@ -162,7 +157,6 @@ int tinet_connect(const int timeout) {
                         }
                     } while (true);
                 }
-                printf("TCP init failed\n");
                 return TINET_TCP_INIT_FAILED;
             }
         }
@@ -205,7 +199,6 @@ int tinet_read_srl(char *to_buffer) {
             total_bytes_read += bytes_read;
 
             if (to_buffer[total_bytes_read - 1] == '\n') {
-                printf("newline encoutered\n");
                 break;
             }
         } else if (bytes_read < 0) {
