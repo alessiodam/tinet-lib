@@ -197,8 +197,7 @@ int tinet_read_srl(char *to_buffer) {
     int total_bytes_read = 0;
 
     while (true) {
-        const int bytes_read = srl_Read(&srl_device, to_buffer + total_bytes_read, 64);
-
+        const int bytes_read = srl_Read(&srl_device, to_buffer + total_bytes_read, 128);
 
         if (bytes_read > 0) {
             has_srl_device = true;
