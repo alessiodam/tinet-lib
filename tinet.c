@@ -10,11 +10,26 @@
 /*
  *--------------Contributors--------------
  * TIny_Hacker - key parsing for login
- * ACagliano (Anthony Cagliano) - help with serial things
+ * ACagliano (Anthony Cagliano) - help with general serial things
+ * commandblockguy - help with serial read
  *--------------------------------------
 */
 
-#include "tinet.h"
+/*
+ * Dear programmer,
+ * when I worte this code, only God and I
+ * knew how it worked.
+ * Now, only God knows it!
+ *
+ * Therefore, if you are trying to optimize
+ * this code and it fails (most surely),
+ * please increase this counter as
+ * a warning for the next person:
+ *
+ * Total hours wasted here = 16 hours.
+*/
+
+#include "tinet-lib/tinet.h"
 #include <string.h>
 #include <fileioc.h>
 #include <srldrvce.h>
@@ -125,14 +140,13 @@ int tinet_connect(const int timeout) {
         const TINET_ReturnCode read_result = tinet_read_srl(tinet_net_buffer);
         if (read_result > 0) {
             printf("read success\n");
-            printf("%s\n", tinet_net_buffer);
-            if (strcmp(tinet_net_buffer, "BRIDGE_CONNECTED\0") == 0) {
+            if (strcmp(tinet_net_buffer, "BRIDGE_CONNECTED\n") == 0) {
                 printf("Bridge connected\n");
                 bridge_connected = true;
 
-                const TINET_ReturnCode write_response = tinet_write_srl("CONNECT_TCP\0");
+                const TINET_ReturnCode write_response = tinet_write_srl("CONNECT_TCP\n");
                 if (write_response == TINET_SUCCESS) {
-                    printf("requested TCP sock open\n");
+                    printf("TCP open request\n");
                     do {
                         time(&current_time);
                         if ((int)difftime(current_time, start_time) > timeout) {
@@ -140,7 +154,7 @@ int tinet_connect(const int timeout) {
                         }
                         const int connect_tcp_read_bytes = tinet_read_srl(tinet_net_buffer);
                         if (connect_tcp_read_bytes > 0) {
-                            if (strcmp(tinet_net_buffer, "TCP_CONNECTED\0") == 0) {
+                            if (strcmp(tinet_net_buffer, "TCP_CONNECTED\n") == 0) {
                                 // connected to TCP
                                 tcp_connected = true;
                                 return TINET_SUCCESS;
@@ -180,17 +194,33 @@ int tinet_write_srl(const char *message) {
 
 // TODO: not receiving all the data, fix this
 int tinet_read_srl(char *to_buffer) {
-    const int bytes_read = srl_Read(&srl_device, to_buffer, 1024);
-    if (bytes_read > 0) {
-        has_srl_device = true;
-        bridge_connected = true;
-    } else if (bytes_read < 0) {
-        has_srl_device = false;
-        bridge_connected = false;
+    int total_bytes_read = 0;
+
+    while (true) {
+        const int bytes_read = srl_Read(&srl_device, to_buffer + total_bytes_read, 64);
+
+
+        if (bytes_read > 0) {
+            has_srl_device = true;
+            bridge_connected = true;
+            total_bytes_read += bytes_read;
+
+            if (to_buffer[total_bytes_read - 1] == '\n') {
+                printf("newline encoutered\n");
+                break;
+            }
+        } else if (bytes_read < 0) {
+            has_srl_device = false;
+            bridge_connected = false;
+            break;
+        } else {
+            break;
+        }
     }
-    to_buffer[bytes_read] = '\0';
+
+    to_buffer[total_bytes_read] = '\0';
     usb_HandleEvents();
-    return bytes_read;
+    return total_bytes_read;
 }
 
 TINET_ReturnCode tinet_login(const int timeout) {
@@ -209,7 +239,7 @@ TINET_ReturnCode tinet_login(const int timeout) {
     }
 
     char login_msg[93];
-    snprintf(login_msg, sizeof(login_msg), "LOGIN:%s:%s:%s", calcidStr, username, authkey);
+    snprintf(login_msg, sizeof(login_msg), "LOGIN:%s:%s:%s\n", calcidStr, username, authkey);
 
     const TINET_ReturnCode write_result = tinet_write_srl(login_msg);
     if (write_result != TINET_SUCCESS) {
@@ -223,7 +253,7 @@ TINET_ReturnCode tinet_login(const int timeout) {
         }
         const int read_bytes = tinet_read_srl(tinet_net_buffer);
         if (read_bytes > 0) {
-            if (strcmp(tinet_net_buffer, "LOGIN_SUCCESS\0") == 0) {
+            if (strcmp(tinet_net_buffer, "LOGIN_SUCCESS\n") == 0) {
                 return TINET_SUCCESS;
             }
             return TINET_LOGIN_FAILED;
@@ -240,7 +270,7 @@ TINET_ReturnCode tinet_send_rtc_message(const char *recipient, const char *messa
     strcat(write_message, recipient);
     strcat(write_message, ":");
     strcat(write_message, message);
-    strcat(write_message, "\0");
+    strcat(write_message, "\n");
 
     const TINET_ReturnCode rtc_chat_sent = tinet_write_srl(write_message);
     write_message[0] = '\0';
