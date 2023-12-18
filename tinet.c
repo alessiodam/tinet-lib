@@ -247,6 +247,8 @@ TINET_ReturnCode tinet_login(const int timeout) {
         if (read_bytes > 0) {
             if (strcmp(tinet_net_buffer, "LOGIN_SUCCESS\n") == 0) {
                 return TINET_SUCCESS;
+            } else if (strcmp(tinet_net_buffer, "ALREADY_CONNECTED\n") == 0) {
+                return TINET_LOGIN_ALREADY_CONNECTED;
             }
             return TINET_LOGIN_FAILED;
         }

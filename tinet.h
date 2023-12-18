@@ -49,20 +49,21 @@ extern "C" {
   * @brief Possible return codes for TINET functions.
   */
  typedef enum {
-  TINET_SUCCESS,           /**< General return code for a successful operation. */
-  TINET_FAIL,              /**< General error code for unknown failures. */
-  TINET_NO_KEYFILE,        /**< No keyfile found. */
-  TINET_INVALID_KEYFILE,   /**< Invalid keyfile format. */
-  TINET_SRL_INIT_FAIL,     /**< Serial initialization failure. */
-  TINET_SRL_WRITE_FAIL,    /**< Serial write failure. */
-  TINET_SRL_READ_FAIL,     /**< Serial read failure. */
-  TINET_NO_BRIDGE,         /**< No bridge connected or not initialized. */
-  TINET_TIMEOUT_EXCEEDED,  /**< Timeout exceeded during execution. */
-  TINET_TCP_INIT_FAILED,   /**< Could not create a TCP socket on the bridge. */
-  TINET_UNSUPPORTED_CALC,  /**< Incorrect calc model, only TI-84PCE (Python Edition too) works. */
-  TINET_LOGIN_FAILED,      /**< General error code for a failed login. */
-  TINET_NO_CONNECTION,     /**< General error code for no connection, might be bridge, srl or something else */
-  TINET_CHAT_SEND_FAIL,    /**< General error code for a failed chat send. */
+  TINET_SUCCESS,                      /**< General return code for a successful operation. */
+  TINET_FAIL,                         /**< General error code for unknown failures. */
+  TINET_NO_KEYFILE,                   /**< No keyfile found. */
+  TINET_INVALID_KEYFILE,              /**< Invalid keyfile format. */
+  TINET_SRL_INIT_FAIL,                /**< Serial initialization failure. */
+  TINET_SRL_WRITE_FAIL,               /**< Serial write failure. */
+  TINET_SRL_READ_FAIL,                /**< Serial read failure. */
+  TINET_NO_BRIDGE,                    /**< No bridge connected or not initialized. */
+  TINET_TIMEOUT_EXCEEDED,             /**< Timeout exceeded during execution. */
+  TINET_TCP_INIT_FAILED,              /**< Could not create a TCP socket on the bridge. */
+  TINET_UNSUPPORTED_CALC,             /**< Incorrect calc model, only TI-84PCE (Python Edition too) works. */
+  TINET_LOGIN_FAILED,                 /**< General error code for a failed login. */
+  TINET_LOGIN_ALREADY_CONNECTED,      /**< Error code for login if the user already has a session on TINET. */
+  TINET_NO_CONNECTION,                /**< General error code for no connection, might be bridge, srl or something else */
+  TINET_CHAT_SEND_FAIL,               /**< General error code for a failed chat send. */
  } TINET_ReturnCode;
 
  /**
